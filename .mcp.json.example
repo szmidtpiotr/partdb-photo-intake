@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "partdb": {
+      "type": "http",
+      "url": "https://partdb.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${PARTDB_MCP_TOKEN}"
+      }
+    },
+    "bom": {
+      "command": "docker",
+      "args": ["exec", "-i", "bom-agent", "python", "-m", "bom_agent.mcp_server"]
+    }
+  }
+}

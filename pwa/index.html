@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#262420">
+<title>Warsztat — dodaj części</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<!-- Znacznik wersji w adresach zasobów: bez niego zainstalowana aplikacja
+     potrafi trzymać stary kod tygodniami, bo przeglądarka nie ma powodu
+     pytać serwera o plik, którego adres się nie zmienił. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="/styles.css?v=25">
+</head>
+<body>
+
+<!-- Ten sam pasek zakładek co w Warsztacie (ADR-022): „Dodaj” to osobna
+     strona, ale dla użytkownika ma być jedną aplikacją. -->
+<nav class="nav-rail" aria-label="Zakładki">
+  <div class="nav-logo" title="Colorbox Studio · Warsztat"><svg viewBox="2 8 104 104" aria-hidden="true"><polygon class="ink" points="28,58 58,75 58,110 28,93"/><polygon class="ink" points="62,75 92,58 92,93 62,110"/><polygon class="ink" points="24,52 56,35 44,10 12,27"/><polygon points="60,50 68,58 60,66 52,58" fill="#D4553A"/><polygon points="70,22 78,30 70,38 62,30" fill="#E2A33B"/><polygon points="87,14 93,20 87,26 81,20" fill="#2E8C86"/></svg></div>
+  <a class="nav-tab" href="/"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span><span>Szukaj</span></a>
+  <a class="nav-tab" href="/#przegladaj"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span><span>Przeglądaj</span></a>
+  <a class="nav-tab" href="/#listy"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="4" width="4" height="4" rx="1"/><rect x="3.5" y="10" width="4" height="4" rx="1"/><rect x="3.5" y="16" width="4" height="4" rx="1"/><line x1="11" y1="6" x2="21" y2="6"/><line x1="11" y1="12" x2="21" y2="12"/><line x1="11" y1="18" x2="21" y2="18"/></svg></span><span>Listy</span></a>
+  <a class="nav-tab on" href="/dodaj" aria-current="page"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span>Dodaj</span></a>
+</nav>
+
+<header class="bar">
+  <h1>Dodaj części</h1>
+  <span id="status" class="status" title="stan połączenia">…</span>
+</header>
+
+<main>
+  <!-- Lokalizacja jest pierwsza i zapamiętywana, bo przy sortowaniu
+       fotografuje się kilkanaście kuwet z rzędu z tego samego kartonu. -->
+  <label class="field">
+    <span>Gdzie to leży</span>
+    <input id="location" type="text" inputmode="text" autocomplete="off"
+           placeholder="np. A/A1 — zostanie zapamiętane">
+  </label>
+
+  <div class="actions">
+    <!-- Pola plików są ukryte wizualnie, ale ZOSTAJĄ w układzie strony.
+         `hidden` (czyli display:none) potrafi zablokować otwarcie
+         wybieraka w Chrome na Androidzie, zwłaszcza w trybie aplikacji. -->
+    <label class="btn btn-primary">
+      Zrób zdjęcie
+      <input id="camera" class="sr-only" type="file" accept="image/*" capture="environment">
+    </label>
+    <label class="btn">
+      Wybierz z galerii
+      <input id="gallery" class="sr-only" type="file" accept="image/*" multiple>
+    </label>
+  </div>
+
+  <!-- Spike #76: aparat w stronie z ZAPAMIĘTANYM zoomem. Natywna aplikacja
+       aparatu (capture="environment") startuje z zoomem 1× i nie ma API,
+       żeby jej podać stan początkowy — a przy drobnym sitodruku ustawia się
+       go przy każdym zdjęciu od nowa. Przełącznik, nie zamiana: natywny
+       aparat daje pełne przetwarzanie obliczeniowe telefonu i dopóki nie
+       wiemy, że wycinek jest równie czytelny, zostaje domyślny. -->
+  <label class="toggle">
+    <input id="precise" type="checkbox">
+    <span>Tryb precyzyjny — aparat w aplikacji, zoom zapamiętany</span>
+  </label>
+
+  <details class="dictate">
+    <summary>Podyktuj zamiast fotografować</summary>
+    <p class="hint">
+      Użyj mikrofonu na klawiaturze telefonu. Przykład:
+      <em>„kuweta B3, dużo kondensatorów 100 nano 0805, ze dwadzieścia
+      elektrolitów 470 mikro na 25 wolt”</em>
+    </p>
+    <textarea id="text" rows="4" placeholder="Dyktuj albo pisz…"></textarea>
+    <button id="send-text" class="btn btn-primary" type="button">Wyślij opis</button>
+  </details>
+
+  <section class="queue">
+    <!-- Dwa stany kolejki, wprost widoczne z telefonu (#69): co czeka na
+         wczytanie, a co już jest w bazie. Bez tego po zatwierdzeniu pozycja
+         znikała bez śladu i łatwo było sfotografować rzecz drugi raz. -->
+    <div class="tabs" role="tablist">
+      <button id="tab-queue" class="tab" type="button" role="tab"
+              aria-selected="true">Czeka <span id="badge-queue" class="badge"></span></button>
+      <!-- Trzeci stan (#74, ADR-021): rozpoznane, ale jeszcze nie w bazie.
+           Bez osobnej zakładki propozycje mieszałyby się ze zdjęciami
+           czekającymi na rozpoznanie, a to dwie różne robotki: tam trzeba
+           dołożyć ujęcie, tu wystarczy kliknąć ✓. -->
+      <button id="tab-review" class="tab" type="button" role="tab"
+              aria-selected="false">Do zatwierdzenia <span id="badge-review" class="badge"></span></button>
+      <button id="tab-archive" class="tab" type="button" role="tab"
+              aria-selected="false">Archiwum <span id="badge-archive" class="badge"></span></button>
+    </div>
+    <p id="counts" class="counts"></p>
+    <ul id="items" class="items"></ul>
+    <p id="empty" class="hint">Jeszcze nic tu nie ma. Zrób pierwsze zdjęcie.</p>
+    <!-- Bez tego zdania przyciski w wierszu wyglądają jak druga droga do
+         wysłania zdjęcia, a nie jak sposób na opisanie jednej rzeczy
+         kilkoma ujęciami. Podpowiedź dotyczy tylko widoku „Czeka". -->
+    <p id="queue-help" class="hint">
+      <strong>＋◉</strong> i <strong>＋▤</strong> w wierszu dokładają kolejne
+      ujęcia <em>tej samej</em> rzeczy — spód modułu, zbliżenie na napis.
+      Z galerii można zaznaczyć kilka naraz.
+    </p>
+  </section>
+</main>
+
+<!-- Pasek zlecania kilku pozycji naraz. Pusty i schowany, dopóki nikt
+     niczego nie zaznaczył — checkboksy siedzą w wierszach kolejki. -->
+<div id="batch-bar" class="batch-bar" hidden>
+  <span id="batch-count"></span>
+  <div class="buttons">
+    <button id="batch-clear" class="btn btn-quiet" type="button">Odznacz</button>
+    <button id="batch-recognize" class="btn btn-primary" type="button">Zleć rozpoznanie</button>
+  </div>
+</div>
+
+<!-- Podglądu aparatu nie da się zrobić bez własnego ekranu: zoom ustawia
+     się na żywym obrazie, więc obraz musi być widoczny. -->
+<div id="viewfinder" class="viewfinder" hidden>
+  <video id="preview" playsinline autoplay muted></video>
+  <div class="vf-bar">
+    <label class="vf-zoom">
+      <span id="zoom-label">zoom</span>
+      <input id="zoom" type="range" min="1" max="1" step="0.1" value="1">
+    </label>
+    <div class="vf-buttons">
+      <button id="vf-cancel" class="btn btn-quiet" type="button">Zamknij</button>
+      <button id="vf-shoot" class="btn btn-primary" type="button">Zrób zdjęcie</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<nav class="nav-bar" aria-label="Zakładki">
+  <a class="nav-tab" href="/"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/></svg></span><span>Szukaj</span></a>
+  <a class="nav-tab" href="/#przegladaj"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg></span><span>Przeglądaj</span></a>
+  <a class="nav-tab" href="/#listy"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="4" width="4" height="4" rx="1"/><rect x="3.5" y="10" width="4" height="4" rx="1"/><rect x="3.5" y="16" width="4" height="4" rx="1"/><line x1="11" y1="6" x2="21" y2="6"/><line x1="11" y1="12" x2="21" y2="12"/><line x1="11" y1="18" x2="21" y2="18"/></svg></span><span>Listy</span></a>
+  <a class="nav-tab on" href="/dodaj" aria-current="page"><span class="nav-pill"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span>Dodaj</span></a>
+</nav>
+
+<!-- Poczekalnia jest osobnym plikiem, bo korzysta z niej także
+     service worker (udostępnianie z innych aplikacji). -->
+<script src="/outbox.js?v=25"></script>
+<script src="/app.js?v=25"></script>
+</body>
+</html>

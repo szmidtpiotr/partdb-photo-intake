@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "MCP configuration for the unattended recognition run (scripts/recognize_requested.sh).",
+    "Two differences from .mcp.json:",
+    "1. INTAKE_ONLY_REQUESTED=1 is set inside the server process, so intake_pending returns ONLY items",
+    "   the user flagged with the 'Recognize' button, whatever the model asks for.",
+    "2. There is no partdb server here. Together with --strict-mcp-config the run cannot touch the",
+    "   inventory at all, neither for reading nor for writing.",
+    "If bom-agent runs on another machine, put [\"ssh\", \"user@host\", \"docker\", ...] in front."
+  ],
+  "mcpServers": {
+    "bom": {
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "-e",
+        "INTAKE_ONLY_REQUESTED=1",
+        "bom-agent",
+        "python",
+        "-m",
+        "bom_agent.mcp_server"
+      ]
+    }
+  }
+}

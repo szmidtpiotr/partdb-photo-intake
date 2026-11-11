@@ -1,0 +1,23 @@
+# Kontekst budowania: tylko kod usługi. Reszta repo nie ma po co jechać
+# do demona dockerowego — spowalnia build i wciąga sekrety.
+.git/
+.github/
+.GitHubBoard/
+.venv/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+docs/
+deploy/
+tests/
+scripts/
+temp-img/
+data/
+*.db
+*.sqlite*

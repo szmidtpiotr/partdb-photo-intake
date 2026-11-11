@@ -1,0 +1,102 @@
+# Part-DB + bom-agent in one stack.
+#
+#   cp .env.example .env      # then fill in the values
+#   docker compose up -d --build
+#
+# Part-DB runs unmodified from the official image. bom-agent is built from
+# the Dockerfile in the repository root and talks to Part-DB only through
+# its REST API, over the internal Docker network (http://partdb).
+
+services:
+  partdb:
+    image: jbtronics/part-db1:v2.20.5
+    container_name: partdb
+    restart: unless-stopped
+    ports:
+      - "${PARTDB_PORT:-8090}:80"
+    volumes:
+      # SQLite database (uploads/app.db) and uploaded attachments.
+      - ./partdb/uploads:/var/www/html/uploads
+      - ./partdb/media:/var/www/html/public/media
+    environment:
+      APP_SECRET: ${PARTDB_APP_SECRET:?set PARTDB_APP_SECRET in .env}
+
+      # Password of the "admin" account, used once when the database is
+      # created by the first migration. Change it in Part-DB afterwards.
+      INITIAL_ADMIN_PW: ${PARTDB_ADMIN_PASSWORD:?set PARTDB_ADMIN_PASSWORD in .env}
+
+      # Symfony rejects requests whose Host header is not on this list (HTTP
+      # 400 before any login). It is a regular expression. "partdb" must stay:
+      # bom-agent reaches Part-DB under that name.
+      TRUSTED_HOSTS: ${PARTDB_TRUSTED_HOSTS:-^(partdb|localhost)$}
+
+      # Needed when TLS ends on a reverse proxy in front of Part-DB,
+      # otherwise Symfony builds http:// redirects.
+      TRUSTED_PROXIES: "192.168.0.0/16,172.16.0.0/12,10.0.0.0/8"
+
+      DEFAULT_LANG: ${PARTDB_LANG:-en}
+      DEFAULT_TIMEZONE: ${TZ:-UTC}
+      BASE_CURRENCY: ${PARTDB_CURRENCY:-EUR}
+      INSTANCE_NAME: "Workshop parts"
+      DEFAULT_UNIT_SYSTEM: metric
+
+      # Built-in MCP server of Part-DB (read and write since 2.16): /mcp
+      MCP_ENABLED: 1
+
+      # Lets Part-DB download datasheets and pictures into its own storage
+      # instead of keeping links to a supplier CDN that changes every year.
+      ALLOW_ATTACHMENT_DOWNLOADS: 1
+
+      # Info providers that need no API key.
+      PROVIDER_LCSC_ENABLED: 1
+      PROVIDER_ADAFRUIT_ENABLED: 1
+      PROVIDER_SPARKFUN_ENABLED: 1
+      PROVIDER_POLOLU_ENABLED: 1
+      PROVIDER_GENERIC_WEB_ENABLED: 1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  bom-agent:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: bom-agent:local
+    container_name: bom-agent
+    restart: unless-stopped
+    depends_on:
+      partdb:
+        condition: service_healthy
+    ports:
+      - "${BOM_AGENT_PORT:-8091}:8091"
+    environment:
+      TZ: ${TZ:-UTC}
+      PARTDB_URL: http://partdb
+      PARTDB_API_TOKEN: ${PARTDB_API_TOKEN:-}
+      # Addresses the BROWSER uses — they end up in links and in the photo
+      # attachments stored in Part-DB, so localhost will not work from a phone.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env}
+      PARTDB_PUBLIC_URL: ${PARTDB_PUBLIC_URL:?set PARTDB_PUBLIC_URL in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Intake queue (SQLite) and the original photos. The photos are the only
+      # data you cannot rebuild without going through the boxes again.
+      - bom-agent-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8091/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+volumes:
+  bom-agent-data:

@@ -1,0 +1,50 @@
+# --- SEKRETY — NIGDY nie commitować ---
+# .GitHubBoard/ zawiera token GitHub i klucz Anthropic.
+# Uwaga: .gitignore NIE obsluguje komentarzy na koncu linii — wzorzec musi
+# stac sam, inaczej cala linia (razem z komentarzem) staje sie wzorcem
+# i nic nie pasuje.
+.GitHubBoard/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- dane runtime ---
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+uploads/
+intake/photos/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Node / PWA ---
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- narzędzia ---
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# --- wdrożenie ---
+deploy/.env
+deploy/partdb/
+deploy/backups/
+.mcp.json

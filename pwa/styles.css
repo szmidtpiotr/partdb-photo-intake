@@ -1,0 +1,544 @@
+/* Ciemny motyw, bo intake robi się w warsztacie, często wieczorem.
+   Wszystkie elementy dotykowe mają co najmniej 48 px wysokości — palec
+   w rękawicy roboczej nie trafia w małe przyciski. */
+
+/* Paleta marki Colorbox Studio, tryb ciemny (marka/tokens.json w repo
+   colorbox-studio-brand) — ta sama co w Warsztacie. */
+:root {
+  --bg: #262420;      /* paper */
+  --panel: #302d29;   /* surface */
+  --panel2: #3a3732;  /* surface-raised */
+  --line: #57524a;
+  --text: #ede9e2;
+  --muted: #bfb9af;
+  --accent: #e2a33b;  /* amber */
+  --ok: #6cc3bb;      /* teal-text */
+  --bad: #f08e76;     /* vermilion-text */
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+/* `[hidden]` MUSI wygrywać z regułami układu. Arkusz przeglądarki ma
+   `[hidden] { display: none }`, ale KAŻDA reguła autora z `display:` ją bije
+   — więc `element.hidden = true` przestaje cokolwiek ukrywać.
+   Zaliczyliśmy to dwa razy:
+     * `.viewfinder { display: flex }` — pusta nakładka aparatu przechwytywała
+       każde dotknięcie i aplikacja przestała reagować (v8);
+     * `.batch-bar { display: flex }` — pasek „Zleć rozpoznanie" wisiał na
+       wierzchu na każdej zakładce i zasłaniał „✓ Zatwierdź" na karcie
+       propozycji, mimo że kod ustawiał `hidden` poprawnie (v10-v11).
+   Jedna reguła globalna zamyka całą klasę tego błędu, także dla elementów,
+   których jeszcze nie ma. `!important` jest tu narzędziem właściwym: to
+   deklaracja „ukryte znaczy ukryte", a nie obejście cudzej specyficzności. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.bar h1 { font-size: 18px; margin: 0; font-weight: 600; }
+
+.status { font-size: 13px; color: var(--muted); }
+.status[data-state="ok"] { color: var(--ok); }
+.status[data-state="bad"] { color: var(--bad); }
+
+main { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+.field { display: block; margin-bottom: 16px; }
+.field span { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+
+input[type="text"], textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+textarea { min-height: 96px; resize: vertical; }
+
+.actions { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+
+/* Ukrycie bez `display:none` — pole zostaje w układzie, więc Chrome na
+   Androidzie otwiera wybierak plików także w zainstalowanej aplikacji. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #17181a; }
+
+.dictate { margin: 20px 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--panel); }
+.dictate summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+.dictate textarea { margin: 10px 0; background: var(--bg); }
+.dictate .btn { width: 100%; }
+
+.hint { color: var(--muted); font-size: 14px; }
+.hint em { color: var(--text); font-style: normal; }
+
+.counts { font-size: 13px; color: var(--muted); font-weight: 400; margin: 8px 2px 12px; }
+
+/* Zakładki „Czeka / Archiwum" (#69). Cel dotykowy ≥48 px, aktywna podkreślona
+   akcentem — na telefonie w warsztacie musi być widać, gdzie się jest. */
+.tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+.tab {
+  flex: 1;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
+.tab:active { transform: translateY(1px); }
+
+.badge {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 7px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.tab[aria-selected="true"] .badge { color: var(--accent); border-color: var(--accent); }
+
+/* Co powstało z zatwierdzonej pozycji: nazwy części, klikalne, jeśli mają
+   rekord w Part-DB. */
+.item .parts { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.item .part { font-size: 13px; color: var(--ok); }
+a.part { text-decoration: underline; }
+
+.items { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.item {
+  display: grid;
+  /* Czwarta kolumna jest zawsze obecna, nawet gdy checkbox nie ma sensu
+     (pozycja zapisana, opis, zlecona już) — komórka wtedy jest pusta, a nie
+     nieobecna. Bez tego wiersze różniłyby się liczbą kolumn i siatka
+     „rozjeżdżałaby się" między nimi, a nie tylko przy zmianie stanu. */
+  grid-template-columns: 26px 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.select-cell { display: flex; align-items: center; justify-content: center; }
+.select-cell input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.item img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.item .glyph {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px dashed var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.item .meta { min-width: 0; }
+.item .title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .sub { font-size: 13px; color: var(--muted); }
+
+.tag { font-size: 12px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag[data-status="pending"] { color: var(--accent); border-color: var(--accent); }
+.tag[data-status="committed"] { color: var(--ok); border-color: var(--ok); }
+.tag[data-status="rejected"] { color: var(--bad); border-color: var(--bad); }
+.tag[data-status="failed"] { color: var(--bad); border-color: var(--bad); }
+
+.retry { min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--bad); background: transparent; color: var(--bad); font: inherit; }
+
+.actions-cell { display: flex; align-items: center; gap: 8px; }
+
+/* 44 px to minimum, w które trafia palec — kasowanie ma być celowe,
+   ale nie ma być walką z interfejsem. */
+.delete {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.delete:active { color: var(--bad); border-color: var(--bad); }
+
+/* „Dołóż ujęcie" — ten sam rozmiar celu co kasowanie, ale w kolorze
+   akcentu, bo to ruch twórczy, a nie niszczący. */
+.add-shot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.add-shot:active { background: rgba(255, 255, 255, 0.06); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: 90vw;
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border: 1px solid var(--line);
+  z-index: 10;
+}
+
+.toast[data-kind="bad"] { border-color: var(--bad); }
+
+/* ─── Karty propozycji (#74) ───────────────────────────────────────────────
+   Zdjęcie u góry, pola pod nim. Na telefonie trzymanej w jednej ręce
+   przyciski muszą wypaść na dole karty, w zasięgu kciuka — stąd kolumna,
+   a nie wiersz jak w liście kolejki. */
+
+.card {
+  display: block;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.card img {
+  width: 100%;
+  max-height: 42vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #1e1c19;
+}
+
+.card-body { display: grid; gap: 10px; margin-top: 10px; }
+
+.card-field { display: grid; gap: 4px; }
+.card-field > span { color: var(--muted); font-size: 13px; }
+
+.card-field input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px; /* poniżej 16px iOS przybliża stronę przy wejściu w pole */
+  color: var(--text);
+  background: #1e1c19;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.card-field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Werdykt deduplikacji. Kolor ma mówić, czy to nowa rzecz w magazynie,
+   czy dokładka do czegoś, co już tam leży — pomyłka tutaj jest dokładnie
+   tym błędem, przed którym broni ADR-019. */
+.verdict {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ok);
+}
+
+.verdict[data-action="merge"] { border-left-color: var(--accent); }
+.verdict-sub { color: var(--muted); font-size: 13px; }
+
+.card-note { margin: 0; color: var(--muted); font-size: 13px; }
+
+.card-desc { font-size: 13px; color: var(--muted); }
+/* Własny znacznik zamiast domyślnego trójkąta: `display: flex` na summary
+   go chowa i wtedy napis nie wygląda na coś, co się rozwija. */
+.card-desc { border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; }
+.card-desc summary {
+  cursor: pointer; min-height: 44px; display: flex; align-items: center;
+  list-style: none; color: var(--text); font-size: 14px;
+}
+.card-desc summary::-webkit-details-marker { display: none; }
+.card-desc summary::before { content: '▸'; margin-right: 8px; }
+.card-desc[open] summary::before { content: '▾'; }
+.card-desc p { margin: 0 0 12px; white-space: pre-line; overflow-wrap: anywhere; }
+
+.card-actions { display: flex; gap: 10px; }
+.card-actions .btn { flex: 1; min-height: 48px; }
+
+.btn-quiet { background: transparent; color: var(--text); }
+
+/* Nagłówek grupy: wszystkie propozycje z jednego zdjęcia (#72). */
+.group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 14px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.group .btn { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+
+/* „Zleć rozpoznanie" w wierszu kolejki. Wyłączony stan jest obwiedziony
+   kolorem akcentu tylko po włączeniu — inaczej nie dałoby się poznać, czy
+   zlecenie już poszło. */
+.recognize {
+  /* Szerokość STAŁA — tekst przycisku się nie zmienia (patrz app.js).
+     Wcześniej '⟳' → '⟳ zlecone' zmieniało szerokość kolumny `auto` i
+     wiersz widocznie „skakał" po kliknięciu; stan pokazuje sam kolor
+     i obramowanie, nie długość napisu. */
+  width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recognize[data-on="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.recognize:disabled { opacity: 0.5; }
+
+/* Notatka do zdjęcia (#75) — ten sam kształt co „Zleć rozpoznanie",
+   podświetlona, gdy notatka już jest. */
+.note {
+  width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 17px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.note[data-on="true"] { border-color: var(--accent); color: var(--accent); }
+.note:disabled { opacity: 0.5; }
+
+/* ─── Aparat w aplikacji (spike #76) ───────────────────────────────────────
+   Podgląd na pełny ekran: zoom ustawia się patrząc na obraz, a nie na
+   miniaturę. Pasek na dole, bo telefon trzyma się jedną ręką. */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.viewfinder {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bez tego `display: flex` powyżej BIJE `[hidden] { display: none }` z
+   arkusza przeglądarki (reguła autora ma wyższy priorytet niż UA) i pusta
+   nakładka na cały ekran przechwytuje każde dotknięcie. Zmierzone: po
+   wdrożeniu v8 test przeglądarkowy nie mógł kliknąć niczego, bo <video>
+   z ukrytego podglądu przejmowało zdarzenia wskaźnika. */
+.viewfinder[hidden] { display: none; }
+
+.viewfinder video {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  background: #000;
+}
+
+.vf-bar {
+  display: grid;
+  gap: 12px;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  background: rgba(38, 36, 32, 0.92);
+}
+
+.vf-zoom { display: grid; gap: 6px; color: var(--text); font-size: 14px; }
+.vf-zoom input { width: 100%; height: 36px; accent-color: var(--accent); }
+.vf-zoom input:disabled { opacity: 0.4; }
+
+.vf-buttons { display: flex; gap: 10px; }
+.vf-buttons .btn { flex: 1; min-height: 52px; }
+
+
+/* ─── Zlecanie kilku pozycji naraz (poprawka #75) ──────────────────────────
+   Pasek pojawia się tylko, gdy coś jest zaznaczone — nie zajmuje miejsca,
+   kiedy nikt niczego nie wybiera. */
+
+.batch-bar {
+  /* `fixed`, nie `sticky`: pasek stoi u dołu ekranu przy przewijaniu długiej
+     kolejki, niezależnie od tego, gdzie w dokumencie leży ten <div> — a
+     leży blisko końca body, więc `sticky` trzymałby go w miejscu tylko
+     przy przewinięciu do samego dołu strony. Ten sam wzorzec co `.toast`. */
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+
+.batch-bar span { color: var(--text); font-size: 14px; }
+.batch-bar .buttons { display: flex; gap: 8px; }
+.batch-bar .btn { min-height: 40px; padding: 8px 14px; font-size: 14px; }
+
+/* --- wygląd Warsztatu (ADR-022) -------------------------------------
+   „Dodaj” jest zakładką Warsztatu, więc ma ten sam krój pisma, nagłówek
+   i pasek zakładek. Reguły są na końcu pliku i nadpisują wcześniejsze,
+   żeby nie ruszać sprawdzonego układu kolejki i propozycji. */
+
+:root { --radius: 6px; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+.bar {
+  position: static; background: transparent; border-bottom: 0;
+  max-width: 640px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 20px 0;
+}
+.bar h1 { font-size: 26px; font-weight: 700; }
+.btn { border-radius: 6px; }
+.btn-primary { color: #17181a; }
+
+.nav-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; /* pod aparatem (20) */
+  height: calc(80px + env(safe-area-inset-bottom)); display: flex;
+  background: var(--panel); border-top: 1px solid var(--line);
+  padding: 4px 6px calc(14px + env(safe-area-inset-bottom));
+}
+.nav-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; color: var(--muted); text-decoration: none;
+  font: 600 12px 'Inter', sans-serif;
+}
+.nav-pill { width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+.nav-tab.on { color: var(--text); }
+.nav-tab.on .nav-pill { background: var(--panel2); }
+.nav-rail { display: none; }
+
+/* Pasek zlecania i komunikat nie mogą zasłaniać zakładek. */
+.batch-bar { bottom: calc(92px + env(safe-area-inset-bottom)); }
+.toast { bottom: calc(92px + env(safe-area-inset-bottom)); }
+
+@media (min-width: 900px) {
+  body { padding-bottom: 0; padding-left: 92px; }
+  .nav-bar { display: none; }
+  .nav-rail {
+    display: flex; position: fixed; left: 0; top: 0; bottom: 0; width: 92px; z-index: 12;
+    flex-direction: column; align-items: center; gap: 6px; padding: 16px 0;
+    background: var(--panel); border-right: 1px solid var(--line);
+  }
+  .nav-logo { width: 52px; height: 52px; margin-bottom: 14px; }
+  .nav-logo svg { width: 52px; height: 52px; display: block; }
+  .nav-logo .ink { fill: var(--text); }
+  .nav-rail .nav-tab { flex: none; width: 76px; height: 68px; border-radius: 14px; gap: 6px; }
+  .nav-rail .nav-pill { width: auto; height: auto; }
+  .nav-rail .nav-tab.on { background: var(--panel2); }
+  .nav-rail .nav-tab.on .nav-pill { background: transparent; }
+  .batch-bar, .toast { bottom: calc(20px + env(safe-area-inset-bottom)); }
+}
+
+/* Nagłówki krojem marki. */
+.bar h1, h2 { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; letter-spacing: -.01em; }

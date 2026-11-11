@@ -1,0 +1,52 @@
+[project]
+name = "bom-agent"
+version = "0.1.0"
+description = "Zapis, intake i wnioskowanie nad Part-DB (BOM Manager)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "mcp>=1.2",
+    # Obrót wg EXIF i zmniejszanie zdjęć przed przekazaniem ich agentowi.
+    "pillow>=11",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.scripts]
+bom-agent = "bom_agent.__main__:main"
+bom-agent-mcp = "bom_agent.mcp_server:main"
+
+[dependency-groups]
+dev = [
+    "playwright>=1.62.0",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["bom_agent"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+# `deploy/` to jednorazowe skrypty zasilające ze spike'u oceniającego
+# Part-DB — nie są częścią usługi i nie ma powodu ich przepisywać.
+exclude = ["deploy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = ["S101"]  # assert — w testach jest na miejscu
+
+[tool.ruff.lint.per-file-ignores]
+# Atrapy tokenów i ścieżki w /tmp to materiał testowy, nie wyciek sekretu.
+"tests/*" = ["S105", "S106", "S107", "S108"]

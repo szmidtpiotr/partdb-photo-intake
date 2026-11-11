@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#262420">
+<title>Warsztat</title>
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<!-- Wersja w adresie, z tego samego powodu co w intake'u: bez niej
+     przeglądarka trzyma stary kod, bo adres pliku się nie zmienił. -->
+<link rel="stylesheet" href="/warsztat/warsztat.css?v=25">
+</head>
+<body>
+<!-- Projekt: Claude Design, „Warsztat.dc.html” (ADR-022). Etap 1 — odczyt:
+     szukanie, karta części, kategorie, pudełka, liczniki list. -->
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Zakładki"></nav>
+
+  <section class="main" id="main">
+    <div class="offline" id="offline" hidden>
+      <span class="dot-bad"></span>
+      <span><b>Offline.</b> Pokazuję ostatnio pobrany stan magazynu.</span>
+    </div>
+    <div class="view" id="view"></div>
+  </section>
+
+  <section class="card-pane" id="card-pane" hidden></section>
+  <section class="add-right" id="add-right" hidden></section>
+  <section class="desk-empty" id="desk-empty">
+    <div class="ph-dashed big"></div>
+    <div class="desk-empty-title">Wybierz część z listy</div>
+    <div>Tu pokaże się jej karta: zdjęcie, ilość i pudełko.</div>
+  </section>
+
+  <nav class="tabbar" id="tabbar" aria-label="Zakładki"></nav>
+</div>
+
+<div class="sheet-host" id="sheet" hidden></div>
+<div class="viewer" id="viewer" hidden></div>
+<div class="camera" id="camera" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<!-- Poczekalnia zdjęć bez zasięgu — wspólna z service workerem. -->
+<script src="/outbox.js?v=25"></script>
+<script src="/warsztat/warsztat.js?v=25"></script>
+</body>
+</html>
